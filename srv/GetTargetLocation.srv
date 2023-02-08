@@ -1,3 +1,4 @@
 string requested_target #Can be "pickup", "drink_dropoff", "trash_dropoff", "pot_dropoff"
 ---
-PoseStamped target_pose
+  geometry_msgs/Pose target_pose
+  bool has_been_observed
