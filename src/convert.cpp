@@ -269,10 +269,11 @@ void find_apriltags(const nav_msgs::Odometry::ConstPtr& msg)
   is_apriltag_found(&potRight_apriltag, p_listener);
 
   // pub_front.publish(tableSide_apriltag.lastKnownPoseStamped.pose);
-  pub_front.publish(drinkFront_apriltag.lastKnownPoseStamped);
-  pub_right.publish(drinkRight_apriltag.lastKnownPoseStamped);
-  pub_left.publish(drinkLeft_apriltag.lastKnownPoseStamped);
-  pub_back.publish(drinkBack_apriltag.lastKnownPoseStamped);
+  // For Debug
+  // pub_front.publish(drinkFront_apriltag.lastKnownPoseStamped);
+  // pub_right.publish(drinkRight_apriltag.lastKnownPoseStamped);
+  // pub_left.publish(drinkLeft_apriltag.lastKnownPoseStamped);
+  // pub_back.publish(drinkBack_apriltag.lastKnownPoseStamped);
 }
 
 int main(int argc, char** argv){
