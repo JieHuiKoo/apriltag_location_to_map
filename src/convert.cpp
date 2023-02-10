@@ -150,7 +150,7 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
 {
   if (req.requested_target == "pickup")
   {
-    res.target_pose = tableSide_apriltag.lastKnownPoseStamped.pose;
+    res.target_pose = tableSide_apriltag.lastKnownPoseStamped;
 
     if (tableSide_apriltag.has_been_observed)
     {
@@ -165,27 +165,27 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
   {
     if (drinkFront_apriltag.has_been_observed)
     {
-      res.target_pose = drinkFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = drinkFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (drinkLeft_apriltag.has_been_observed)
     {
-      res.target_pose = drinkLeft_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = drinkLeft_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (drinkRight_apriltag.has_been_observed)
     {
-      res.target_pose = drinkRight_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = drinkRight_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (drinkBack_apriltag.has_been_observed)
     {
-      res.target_pose = drinkBack_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = drinkBack_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;      
     }
     else
     {
-      res.target_pose = drinkFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = drinkFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = false;    
     }
   }
@@ -193,27 +193,27 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
   {
     if (potFront_apriltag.has_been_observed)
     {
-      res.target_pose = potFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = potFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (potLeft_apriltag.has_been_observed)
     {
-      res.target_pose = potLeft_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = potLeft_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (potRight_apriltag.has_been_observed)
     {
-      res.target_pose = potRight_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = potRight_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (potBack_apriltag.has_been_observed)
     {
-      res.target_pose = potBack_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = potBack_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;      
     }
     else
     {
-      res.target_pose = potFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = potFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = false;    
     }
   }
@@ -221,27 +221,27 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
   {
     if (trashFront_apriltag.has_been_observed)
     {
-      res.target_pose = trashFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = trashFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (trashLeft_apriltag.has_been_observed)
     {
-      res.target_pose = trashLeft_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = trashLeft_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (trashRight_apriltag.has_been_observed)
     {
-      res.target_pose = trashRight_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = trashRight_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
     }
     else if (trashBack_apriltag.has_been_observed)
     {
-      res.target_pose = trashBack_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = trashBack_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;      
     }
     else
     {
-      res.target_pose = trashFront_apriltag.lastKnownPoseStamped.pose;
+      res.target_pose = trashFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = false;    
     }
   }
