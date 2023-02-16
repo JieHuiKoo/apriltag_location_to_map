@@ -115,16 +115,25 @@ AprilTagLocation potLeft_apriltag("/tag_11", create_poseStamped(pot_drop_off_poi
 AprilTagLocation potBack_apriltag("/tag_9", create_poseStamped(pot_drop_off_point_width + 0.2, 0, 0, 0, 0, 1.507 + 3.14159)); // Back
 AprilTagLocation potRight_apriltag("/tag_8", create_poseStamped(pot_drop_off_point_length/2, pot_drop_off_point_width/2 + 0.2, 0, 0, 0, 1.507 - 1.507)); // Right
 
+// Drink Drop Off Arm Point
+AprilTagLocation drink_arm_apriltag("/tag_20", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); 
+
+// Trash Drop Off Arm Point
+AprilTagLocation trash_arm_apriltag("/tag_16", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); 
+
+// Pot Drop off Arm Point
+AprilTagLocation pot_arm_apriltag("/tag_10", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507));
+
 // Declare transform listener pointer first, because transform listener needs to be initialised after node is initialised
 tf::TransformListener* p_listener = NULL;
 
-bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listener)
+bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listener, std::string reference_frame)
 {
   if (listener->frameExists(apriltag->frame_name))
     {
       try{
-        listener->waitForTransform("/map", apriltag->frame_name, ros::Time(0), ros::Duration(1));
-        listener->lookupTransform("/map", apriltag->frame_name, ros::Time(0), apriltag->transform);
+        listener->waitForTransform(reference_frame, apriltag->frame_name, ros::Time(0), ros::Duration(1));
+        listener->lookupTransform(reference_frame, apriltag->frame_name, ros::Time(0), apriltag->transform);
       }
       catch(const std::exception& e){
         ROS_INFO("%s seen but not currently observed", apriltag->frame_name.c_str());
@@ -194,27 +203,32 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
     if (potFront_apriltag.has_been_observed)
     {
       res.target_pose = potFront_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = potFront_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (potLeft_apriltag.has_been_observed)
     {
       res.target_pose = potLeft_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = potLeft_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (potRight_apriltag.has_been_observed)
     {
       res.target_pose = potRight_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = potRight_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (potBack_apriltag.has_been_observed)
     {
       res.target_pose = potBack_apriltag.lastKnownPoseStamped;
-      res.has_been_observed = true;      
+      res.is_currently_observed = potBack_apriltag.is_currently_observed();   
+      res.has_been_observed = true;
     }
     else
     {
       res.target_pose = potFront_apriltag.lastKnownPoseStamped;
-      res.has_been_observed = false;    
+      res.has_been_observed = false;
+      res.is_currently_observed = false;   
     }
   }
   else if (req.requested_target == "trash_dropoff")
@@ -222,27 +236,77 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
     if (trashFront_apriltag.has_been_observed)
     {
       res.target_pose = trashFront_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = trashFront_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (trashLeft_apriltag.has_been_observed)
     {
       res.target_pose = trashLeft_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = trashLeft_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (trashRight_apriltag.has_been_observed)
     {
       res.target_pose = trashRight_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = trashRight_apriltag.is_currently_observed();   
       res.has_been_observed = true;
     }
     else if (trashBack_apriltag.has_been_observed)
     {
       res.target_pose = trashBack_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = trashBack_apriltag.is_currently_observed();   
       res.has_been_observed = true;      
     }
     else
     {
       res.target_pose = trashFront_apriltag.lastKnownPoseStamped;
-      res.has_been_observed = false;    
+      res.has_been_observed = false;
+      res.is_currently_observed = false;
+    }
+  }
+  else if (req.requested_target == "trash_arm_dropoff")
+  {
+    if (trash_arm_apriltag.has_been_observed)
+    {
+      res.target_pose = trash_arm_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = trash_arm_apriltag.is_currently_observed();   
+      res.has_been_observed = true;
+    }
+    else
+    {
+      res.target_pose = trashFront_apriltag.lastKnownPoseStamped;
+      res.has_been_observed = false;
+      res.is_currently_observed = false;
+    }
+  }
+    else if (req.requested_target == "drink_arm_dropoff")
+  {
+    if (drink_arm_apriltag.has_been_observed)
+    {
+      res.target_pose = drink_arm_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = drink_arm_apriltag.is_currently_observed();   
+      res.has_been_observed = true;
+    }
+    else
+    {
+      res.target_pose = drink_arm_apriltag.lastKnownPoseStamped;
+      res.has_been_observed = false;
+      res.is_currently_observed = false;
+    }
+  }
+    else if (req.requested_target == "pot_arm_dropoff")
+  {
+    if (pot_arm_apriltag.has_been_observed)
+    {
+      res.target_pose = pot_arm_apriltag.lastKnownPoseStamped;
+      res.is_currently_observed = pot_arm_apriltag.is_currently_observed();   
+      res.has_been_observed = true;
+    }
+    else
+    {
+      res.target_pose = pot_arm_apriltag.lastKnownPoseStamped;
+      res.has_been_observed = false;
+      res.is_currently_observed = false;
     }
   }
 
@@ -251,22 +315,26 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
 
 void find_apriltags(const nav_msgs::Odometry::ConstPtr& msg)
 {
-  is_apriltag_found(&tableSide_apriltag, p_listener);
+  is_apriltag_found(&tableSide_apriltag, p_listener, "/map");
 
-  is_apriltag_found(&drinkFront_apriltag, p_listener);
-  is_apriltag_found(&drinkLeft_apriltag, p_listener);
-  is_apriltag_found(&drinkBack_apriltag, p_listener);
-  is_apriltag_found(&drinkRight_apriltag, p_listener);
+  is_apriltag_found(&drinkFront_apriltag, p_listener, "/map");
+  is_apriltag_found(&drinkLeft_apriltag, p_listener, "/map");
+  is_apriltag_found(&drinkBack_apriltag, p_listener, "/map");
+  is_apriltag_found(&drinkRight_apriltag, p_listener, "/map");
 
-  is_apriltag_found(&trashFront_apriltag, p_listener);
-  is_apriltag_found(&trashLeft_apriltag, p_listener);
-  is_apriltag_found(&trashBack_apriltag, p_listener);
-  is_apriltag_found(&trashRight_apriltag, p_listener);
+  is_apriltag_found(&trashFront_apriltag, p_listener, "/map");
+  is_apriltag_found(&trashLeft_apriltag, p_listener, "/map");
+  is_apriltag_found(&trashBack_apriltag, p_listener, "/map");
+  is_apriltag_found(&trashRight_apriltag, p_listener, "/map");
 
-  is_apriltag_found(&potFront_apriltag, p_listener);
-  is_apriltag_found(&potLeft_apriltag, p_listener);
-  is_apriltag_found(&potBack_apriltag, p_listener);
-  is_apriltag_found(&potRight_apriltag, p_listener);
+  is_apriltag_found(&potFront_apriltag, p_listener, "/map");
+  is_apriltag_found(&potLeft_apriltag, p_listener, "/map");
+  is_apriltag_found(&potBack_apriltag, p_listener, "/map");
+  is_apriltag_found(&potRight_apriltag, p_listener, "/map");
+
+  is_apriltag_found(&pot_arm_apriltag, p_listener, "/map");
+  is_apriltag_found(&trash_arm_apriltag, p_listener, "/map");
+  is_apriltag_found(&drink_arm_apriltag, p_listener, "/map");
 
   // pub_front.publish(tableSide_apriltag.lastKnownPoseStamped.pose);
   // For Debug
