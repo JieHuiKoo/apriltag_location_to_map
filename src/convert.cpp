@@ -3,6 +3,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <nav_msgs/Odometry.h>
+#include <image_transport/image_transport.h>
 
 #include "apriltag_location_to_map/GetTargetLocation.h"
 
@@ -55,6 +56,8 @@ class AprilTagLocation{
       this->lastKnownPoseStamped.pose.position.z = this->lastKnownPoseStamped.pose.position.z + this->offsetPoseStamped.pose.position.z;
 
       tf2::convert(q_new, this->lastKnownPoseStamped.pose.orientation);
+
+      this->lastKnownPoseStamped.pose = project_to_XY_plane(this->lastKnownPoseStamped.pose);
     }
 
     bool is_currently_observed()
@@ -66,6 +69,27 @@ class AprilTagLocation{
     {
       this->new_timestamp = this->transform.stamp_;
       this->has_been_observed = true;
+    }
+
+    geometry_msgs::Pose project_to_XY_plane(geometry_msgs::Pose input_pose)
+    {
+      std::cout<<"original q"<<input_pose.orientation<<std::endl;
+      tf2::Quaternion input_q(input_pose.orientation.x, input_pose.orientation.y , input_pose.orientation.z, input_pose.orientation.w);
+      tf2::Matrix3x3 m(input_q);
+
+      double roll, pitch, yaw;
+      m.getRPY(roll, pitch, yaw);
+      std::cout<<"original rpy|"<<roll<<"|"<<pitch<<"|"<<yaw<<std::endl;
+      tf2::Quaternion output_q;
+      output_q.setRPY(0.00, 0.00, yaw);
+
+      input_pose.orientation.x = output_q[0];
+      input_pose.orientation.y = output_q[1];
+      input_pose.orientation.z = output_q[2];
+      input_pose.orientation.w = output_q[3];
+      std::cout<<input_pose.orientation<<std::endl;
+
+      return input_pose;
     }
 };
 
@@ -136,7 +160,7 @@ bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listen
         listener->lookupTransform(reference_frame, apriltag->frame_name, ros::Time(0), apriltag->transform);
       }
       catch(const std::exception& e){
-        ROS_INFO("%s seen but not currently observed", apriltag->frame_name.c_str());
+        ROS_INFO("[GetTargetLocation]: %s seen but not currently observed", apriltag->frame_name.c_str());
       }
       apriltag->update_timestamp();
       
@@ -144,7 +168,7 @@ bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listen
       {
         apriltag->update_pose();
         // pub_target_pose_location.publish(apriltag->lastKnownPoseStamped);
-        std::cout << "(Found " << apriltag->frame_name << " )" << std::endl;
+        std::cout << "[GetTargetLocation]: (Found " << apriltag->frame_name << " )" << std::endl;
         return true;
       }
       else
@@ -157,6 +181,8 @@ bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listen
 bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request  &req,
                             apriltag_location_to_map::GetTargetLocation::Response &res)
 {
+  ROS_INFO("[GetTargetLocation]: %s requested", req.requested_target.c_str());
+
   if (req.requested_target == "pickup")
   {
     res.target_pose = tableSide_apriltag.lastKnownPoseStamped;
@@ -310,10 +336,16 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
     }
   }
 
+  ROS_INFO("[GetTargetLocation]: %s | has been observed: %d | is_currently_observed: %d", 
+                                                          req.requested_target.c_str(), 
+                                                          (int) res.has_been_observed, 
+                                                          (int) res.is_currently_observed);
+
   return true;
 }
 
-void find_apriltags(const nav_msgs::Odometry::ConstPtr& msg)
+
+void find_apriltags(const sensor_msgs::ImageConstPtr& msg)
 {
   is_apriltag_found(&tableSide_apriltag, p_listener, "/map");
 
@@ -336,7 +368,7 @@ void find_apriltags(const nav_msgs::Odometry::ConstPtr& msg)
   is_apriltag_found(&trash_arm_apriltag, p_listener, "/map");
   is_apriltag_found(&drink_arm_apriltag, p_listener, "/map");
 
-  // pub_front.publish(tableSide_apriltag.lastKnownPoseStamped.pose);
+  pub_front.publish(tableSide_apriltag.lastKnownPoseStamped);
   // For Debug
   // pub_front.publish(drinkFront_apriltag.lastKnownPoseStamped);
   // pub_right.publish(drinkRight_apriltag.lastKnownPoseStamped);
@@ -349,6 +381,7 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "convert");
 
   ros::NodeHandle node;
+  ROS_INFO("|GetTargetLocation| Service Started");
 
   p_listener = new(tf::TransformListener);
 
@@ -362,9 +395,11 @@ int main(int argc, char** argv){
   pub_right = node.advertise<geometry_msgs::PoseStamped>("/Right", 1);
   pub_left = node.advertise<geometry_msgs::PoseStamped>("/Left", 1);
   pub_back = node.advertise<geometry_msgs::PoseStamped>("/Back", 1);
-  
-  // We use odometry purely as a subscriber to register callback and update the registration of apriltags
-  ros::Subscriber sub = node.subscribe("/Odometry", 1, find_apriltags);
+
+  // We subscribe to camera purely as a subscriber to register callback and update the registration of apriltags
+  // ros::Subscriber sub = node.subscribe("/frontCamera/color/image_rect_color/", 1, find_apriltags);
+
+  ros::Subscriber sub = node.subscribe("/tag_detections_image", 1, find_apriltags);
 
   ros::spin();
 
