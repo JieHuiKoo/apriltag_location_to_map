@@ -73,13 +73,11 @@ class AprilTagLocation{
 
     geometry_msgs::Pose project_to_XY_plane(geometry_msgs::Pose input_pose)
     {
-      std::cout<<"original q"<<input_pose.orientation<<std::endl;
       tf2::Quaternion input_q(input_pose.orientation.x, input_pose.orientation.y , input_pose.orientation.z, input_pose.orientation.w);
       tf2::Matrix3x3 m(input_q);
 
       double roll, pitch, yaw;
       m.getRPY(roll, pitch, yaw);
-      std::cout<<"original rpy|"<<roll<<"|"<<pitch<<"|"<<yaw<<std::endl;
       tf2::Quaternion output_q;
       output_q.setRPY(0.00, 0.00, yaw);
 
@@ -87,7 +85,6 @@ class AprilTagLocation{
       input_pose.orientation.y = output_q[1];
       input_pose.orientation.z = output_q[2];
       input_pose.orientation.w = output_q[3];
-      std::cout<<input_pose.orientation<<std::endl;
 
       return input_pose;
     }
