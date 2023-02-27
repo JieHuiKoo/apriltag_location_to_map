@@ -12,6 +12,8 @@ ros::Publisher  pub_front;
 ros::Publisher  pub_right;
 ros::Publisher  pub_left;
 ros::Publisher  pub_back;
+ros::Publisher  pub_target_pose;
+
 
 class AprilTagLocation{
   public:
@@ -109,32 +111,36 @@ geometry_msgs::PoseStamped create_poseStamped(double x, double y, double z, doub
   return poseStamped;
 }
 
+//with respect to apriltag, what is the offset we want to go to.
+//+x  -> rightward
+//+z -> backward
+//+y -> upward
 // Table Side
-AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507));
+AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, -1, 0, 0, 1.507));
 
 // Drink Drop Off Point
 float drop_off_point_width = 0.05;
 float drop_off_point_length = 0.10;
-AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); // Front
-AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2, -drop_off_point_width/2 - 0.2, 0, 0, 0, 1.507 + 1.507)); // Left
-AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(drop_off_point_width + 0.2, 0, 0, 0, 0, 1.507 + 3.14159)); // Back
-AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(drop_off_point_length/2, drop_off_point_width/2 + 0.2, 0, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front
+AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2, -drop_off_point_width/2 - 1, 0, 0, 0, 1.507 + 1.507)); // Left
+AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(0, 0, drop_off_point_width + 1, 0, 0, 1.507 + 3.14159)); // Back
+AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(drop_off_point_length/2, drop_off_point_width/2 + 1, 0, 0, 0, 1.507 - 1.507)); // Right
 
 // Trash Drop off point
 float trash_drop_off_point_width = 0.05;
 float trash_drop_off_point_length = 0.10;
-AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); // Front
-AprilTagLocation trashLeft_apriltag("/tag_13", create_poseStamped(trash_drop_off_point_length/2, -trash_drop_off_point_width/2 - 0.2, 0, 0, 0, 1.507 + 1.507)); // Left
-AprilTagLocation trashBack_apriltag("/tag_14", create_poseStamped(trash_drop_off_point_width + 0.2, 0, 0, 0, 0, 1.507 + 3.14159)); // Back
-AprilTagLocation trashRight_apriltag("/tag_15", create_poseStamped(trash_drop_off_point_length/2, trash_drop_off_point_width/2 + 0.2, 0, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front
+AprilTagLocation trashLeft_apriltag("/tag_13", create_poseStamped(-trash_drop_off_point_width/2 - 1, 0, trash_drop_off_point_length/2, 0, 0, 1.507 + 1.507)); // Left
+AprilTagLocation trashBack_apriltag("/tag_14", create_poseStamped(0, 0, trash_drop_off_point_width + 1, 0, 0, 1.507 + 3.14159)); // Back
+AprilTagLocation trashRight_apriltag("/tag_15", create_poseStamped(trash_drop_off_point_width/2 + 1, 0, trash_drop_off_point_length/2, 0, 0, 1.507 - 1.507)); // Right
 
 // Pot Drop off point
 float pot_drop_off_point_width = 0.05;
 float pot_drop_off_point_length = 0.10;
-AprilTagLocation potFront_apriltag("/tag_10", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); // Front
-AprilTagLocation potLeft_apriltag("/tag_11", create_poseStamped(pot_drop_off_point_length/2, -pot_drop_off_point_width/2 - 0.2, 0, 0, 0, 1.507 + 1.507)); // Left
-AprilTagLocation potBack_apriltag("/tag_9", create_poseStamped(pot_drop_off_point_width + 0.2, 0, 0, 0, 0, 1.507 + 3.14159)); // Back
-AprilTagLocation potRight_apriltag("/tag_8", create_poseStamped(pot_drop_off_point_length/2, pot_drop_off_point_width/2 + 0.2, 0, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation potFront_apriltag("/tag_10", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front
+AprilTagLocation potLeft_apriltag("/tag_11", create_poseStamped(-pot_drop_off_point_width/2 - 1, 0, pot_drop_off_point_length/2, 0, 0, 1.507 + 1.507)); // Left
+AprilTagLocation potBack_apriltag("/tag_9", create_poseStamped(0, 0, pot_drop_off_point_width + 1, 0, 0, 1.507 + 3.14159)); // Back
+AprilTagLocation potRight_apriltag("/tag_8", create_poseStamped(pot_drop_off_point_width/2 + 1, 0, pot_drop_off_point_length/2, 0, 0, 1.507 - 1.507)); // Right
 
 // Drink Drop Off Arm Point
 AprilTagLocation drink_arm_apriltag("/tag_20", create_poseStamped(-0.2, 0, 0, 0, 0, 1.507)); 
@@ -338,6 +344,9 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
                                                           (int) res.has_been_observed, 
                                                           (int) res.is_currently_observed);
 
+  // For debug
+  pub_target_pose.publish(res.target_pose);
+
   return true;
 }
 
@@ -365,7 +374,7 @@ void find_apriltags(const sensor_msgs::ImageConstPtr& msg)
   is_apriltag_found(&trash_arm_apriltag, p_listener, "/map");
   is_apriltag_found(&drink_arm_apriltag, p_listener, "/map");
 
-  pub_front.publish(tableSide_apriltag.lastKnownPoseStamped);
+  // pub_front.publish(tableSide_apriltag.lastKnownPoseStamped);
   // For Debug
   // pub_front.publish(drinkFront_apriltag.lastKnownPoseStamped);
   // pub_right.publish(drinkRight_apriltag.lastKnownPoseStamped);
@@ -378,7 +387,7 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "convert");
 
   ros::NodeHandle node;
-  ROS_INFO("|GetTargetLocation| Service Started");
+  ROS_INFO("[GetTargetLocation]: Service Started");
 
   p_listener = new(tf::TransformListener);
 
@@ -388,6 +397,7 @@ int main(int argc, char** argv){
   ros::Duration(1.0).sleep();
   
   ros::ServiceServer service = node.advertiseService("GetTargetLocation", return_target_location);
+  pub_target_pose = node.advertise<geometry_msgs::PoseStamped>("/target_location_pose", 1);
   pub_front = node.advertise<geometry_msgs::PoseStamped>("/Front", 1);
   pub_right = node.advertise<geometry_msgs::PoseStamped>("/Right", 1);
   pub_left = node.advertise<geometry_msgs::PoseStamped>("/Left", 1);
