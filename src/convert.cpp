@@ -20,7 +20,8 @@ class AprilTagLocation{
     ros::Time old_timestamp = ros::Time(0);
     ros::Time new_timestamp = ros::Time(0);
 
-    tf::StampedTransform transform;
+    tf::StampedTransform transform_apriltag_to_map;
+
     geometry_msgs::PoseStamped lastKnownPoseStamped;
     geometry_msgs::PoseStamped offsetPoseStamped;
     std::string frame_name;
@@ -32,34 +33,84 @@ class AprilTagLocation{
       this->frame_name = frame_name;
     }
 
-    void update_pose()
+    void update_offsetPoseStamped(geometry_msgs::PoseStamped offsetPoseStamped)
     {
-      this->old_timestamp = this->new_timestamp;
+      this->offsetPoseStamped = offsetPoseStamped;
+    }
 
-      this->lastKnownPoseStamped.pose.position.x = this->transform.getOrigin().x();
-      this->lastKnownPoseStamped.pose.position.y = this->transform.getOrigin().y();
-      this->lastKnownPoseStamped.pose.position.z = this->transform.getOrigin().z();
-      this->lastKnownPoseStamped.pose.orientation.x = this->transform.getRotation().getX();
-      this->lastKnownPoseStamped.pose.orientation.y = this->transform.getRotation().getY();
-      this->lastKnownPoseStamped.pose.orientation.z = this->transform.getRotation().getZ();
-      this->lastKnownPoseStamped.pose.orientation.w = this->transform.getRotation().getW();
-      this->lastKnownPoseStamped.header.stamp = this->transform.stamp_;
-      this->lastKnownPoseStamped.header.frame_id = this->transform.frame_id_;
+    geometry_msgs::PoseStamped convert_transform_to_poseStamped(tf::StampedTransform transform)
+    {
+      geometry_msgs::PoseStamped output_poseStamped;
+      
+      output_poseStamped.pose.position.x = transform.getOrigin().x();
+      output_poseStamped.pose.position.y = transform.getOrigin().y();
+      output_poseStamped.pose.position.z = transform.getOrigin().z();
+      output_poseStamped.pose.orientation.x = transform.getRotation().getX();
+      output_poseStamped.pose.orientation.y = transform.getRotation().getY();
+      output_poseStamped.pose.orientation.z = transform.getRotation().getZ();
+      output_poseStamped.pose.orientation.w = transform.getRotation().getW();
+      output_poseStamped.header.stamp = transform.stamp_;
+      output_poseStamped.header.frame_id = transform.frame_id_;
 
+      return output_poseStamped;
+    }
+    
+    geometry_msgs::PoseStamped offset_pose(geometry_msgs::PoseStamped offset, geometry_msgs::PoseStamped output_poseStamped)
+    {
       // Offset the pose to determine the target location, because the location of apriltag is not the location where we want the robot to move to
       tf2::Quaternion q_orig, q_rot, q_new;
-      tf2::convert(this->lastKnownPoseStamped.pose.orientation, q_orig);
-      tf2::convert(this->offsetPoseStamped.pose.orientation, q_rot);
+      tf2::convert(output_poseStamped.pose.orientation, q_orig);
+      tf2::convert(offset.pose.orientation, q_rot);
       q_new = q_rot*q_orig;
       q_new.normalize();
 
-      this->lastKnownPoseStamped.pose.position.x = this->lastKnownPoseStamped.pose.position.x + this->offsetPoseStamped.pose.position.x;
-      this->lastKnownPoseStamped.pose.position.y = this->lastKnownPoseStamped.pose.position.y + this->offsetPoseStamped.pose.position.y;
-      this->lastKnownPoseStamped.pose.position.z = this->lastKnownPoseStamped.pose.position.z + this->offsetPoseStamped.pose.position.z;
+      output_poseStamped.pose.position.x = output_poseStamped.pose.position.x + offset.pose.position.x;
+      output_poseStamped.pose.position.y = output_poseStamped.pose.position.y + offset.pose.position.y;
+      output_poseStamped.pose.position.z = output_poseStamped.pose.position.z + offset.pose.position.z;
 
-      tf2::convert(q_new, this->lastKnownPoseStamped.pose.orientation);
+      tf2::convert(q_new, output_poseStamped.pose.orientation);
 
-      this->lastKnownPoseStamped.pose = project_to_XY_plane(this->lastKnownPoseStamped.pose);
+      return output_poseStamped;
+    }
+
+    geometry_msgs::PoseStamped transform_to_PoseStampedinTargetFrame(geometry_msgs::PoseStamped poseStamped, tf::StampedTransform transform)
+    {
+      geometry_msgs::PoseStamped pose_in_target_frame;
+      
+      tf::Point point_in_source_frame(poseStamped.pose.position.x, poseStamped.pose.position.y, poseStamped.pose.position.z);
+      tf::Quaternion orientation_in_source_frame(poseStamped.pose.orientation.x, poseStamped.pose.orientation.y, poseStamped.pose.orientation.z, poseStamped.pose.orientation.w);
+
+      tf::Point point_in_target_frame;
+      tf::Quaternion orientation_in_target_frame;
+      point_in_target_frame = transform * point_in_source_frame;
+      orientation_in_target_frame = transform.getRotation() * orientation_in_source_frame;
+
+      pose_in_target_frame.pose.position.x = point_in_target_frame.getX();
+      pose_in_target_frame.pose.position.y = point_in_target_frame.getY();
+      pose_in_target_frame.pose.position.z = point_in_target_frame.getZ();
+      
+      pose_in_target_frame.pose.orientation.x = orientation_in_target_frame.getX();
+      pose_in_target_frame.pose.orientation.y = orientation_in_target_frame.getY();
+      pose_in_target_frame.pose.orientation.z = orientation_in_target_frame.getZ();
+      pose_in_target_frame.pose.orientation.w = orientation_in_target_frame.getW();
+
+      pose_in_target_frame.header.stamp = transform.stamp_;
+      pose_in_target_frame.header.frame_id = transform.frame_id_;
+
+      return pose_in_target_frame;
+    }
+
+    void update_pose()
+    {      
+      geometry_msgs::PoseStamped apriltag_location_mapOrigin;
+
+      this->old_timestamp = this->new_timestamp;
+
+      apriltag_location_mapOrigin = transform_to_PoseStampedinTargetFrame(this->offsetPoseStamped, this->transform_apriltag_to_map);
+      
+      apriltag_location_mapOrigin.pose = project_to_XY_plane(apriltag_location_mapOrigin.pose);
+      
+      this->lastKnownPoseStamped = apriltag_location_mapOrigin;
     }
 
     bool is_currently_observed()
@@ -69,7 +120,7 @@ class AprilTagLocation{
 
     void update_timestamp()
     {
-      this->new_timestamp = this->transform.stamp_;
+      this->new_timestamp = this->transform_apriltag_to_map.stamp_;
       this->has_been_observed = true;
     }
 
@@ -111,25 +162,25 @@ geometry_msgs::PoseStamped create_poseStamped(double x, double y, double z, doub
   return poseStamped;
 }
 
-//with respect to apriltag, what is the offset we want to go to.
+//with respect to teh apriltag, what is the offset we want to go to.
 //+x  -> rightward
 //+z -> backward
 //+y -> upward
 // Table Side
-AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, -1, 0, 0, 1.507));
+AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, 0.7, 0, 1.5708, 0));
 
 // Drink Drop Off Point
 float drop_off_point_width = 0.05;
 float drop_off_point_length = 0.10;
-AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front
-AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2, -drop_off_point_width/2 - 1, 0, 0, 0, 1.507 + 1.507)); // Left
-AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(0, 0, drop_off_point_width + 1, 0, 0, 1.507 + 3.14159)); // Back
-AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(drop_off_point_length/2, drop_off_point_width/2 + 1, 0, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(0, 0, 0.7, 0, 1.5708, 0)); // Front
+AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2 + 0.7, 0, -drop_off_point_width/2, 0, 1.5708 + 1.5708, 0)); // Left
+AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(0, 0, drop_off_point_length - 0.7, 0, -1.5708, 0)); // Back
+AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(-drop_off_point_length/2 - 0.7, drop_off_point_width/2, 0, 0, 0, 1.507 - 1.507)); // Right
 
 // Trash Drop off point
 float trash_drop_off_point_width = 0.05;
 float trash_drop_off_point_length = 0.10;
-AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front
+AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(0, 0, 0.7, 0, 1.5708, 0)); // Front
 AprilTagLocation trashLeft_apriltag("/tag_13", create_poseStamped(-trash_drop_off_point_width/2 - 1, 0, trash_drop_off_point_length/2, 0, 0, 1.507 + 1.507)); // Left
 AprilTagLocation trashBack_apriltag("/tag_14", create_poseStamped(0, 0, trash_drop_off_point_width + 1, 0, 0, 1.507 + 3.14159)); // Back
 AprilTagLocation trashRight_apriltag("/tag_15", create_poseStamped(trash_drop_off_point_width/2 + 1, 0, trash_drop_off_point_length/2, 0, 0, 1.507 - 1.507)); // Right
@@ -157,28 +208,28 @@ tf::TransformListener* p_listener = NULL;
 bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listener, std::string reference_frame)
 {
   if (listener->frameExists(apriltag->frame_name))
+  {
+    try{
+      listener->waitForTransform("/map", apriltag->frame_name, ros::Time(0), ros::Duration(1));
+      listener->lookupTransform("/map", apriltag->frame_name, ros::Time(0), apriltag->transform_apriltag_to_map);
+    }
+    catch(const std::exception& e){
+      ROS_INFO("[GetTargetLocation]: %s seen but not currently observed", apriltag->frame_name.c_str());
+    }
+    apriltag->update_timestamp();
+    
+    if (apriltag->is_currently_observed())
     {
-      try{
-        listener->waitForTransform(reference_frame, apriltag->frame_name, ros::Time(0), ros::Duration(1));
-        listener->lookupTransform(reference_frame, apriltag->frame_name, ros::Time(0), apriltag->transform);
-      }
-      catch(const std::exception& e){
-        ROS_INFO("[GetTargetLocation]: %s seen but not currently observed", apriltag->frame_name.c_str());
-      }
-      apriltag->update_timestamp();
-      
-      if (apriltag->is_currently_observed())
-      {
-        apriltag->update_pose();
-        // pub_target_pose_location.publish(apriltag->lastKnownPoseStamped);
-        std::cout << "[GetTargetLocation]: (Found " << apriltag->frame_name << " )" << std::endl;
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }  
+      apriltag->update_pose();
+      // pub_target_pose_location.publish(apriltag->lastKnownPoseStamped);
+      std::cout << "[GetTargetLocation]: (Found " << apriltag->frame_name << " )" << std::endl;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }  
 }
 
 bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request  &req,

@@ -1,4 +1,5 @@
 string requested_target #Can be "pickup", "drink_dropoff", "trash_dropoff", "pot_dropoff, drink_arm_dropoff, trash_arm_dropoff, pot_arm_dropoff"
+#float32 offset_dist_from_front
 ---
 geometry_msgs/PoseStamped target_pose
 bool has_been_observed

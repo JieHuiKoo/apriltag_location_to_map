@@ -9,6 +9,7 @@ project(apriltag_location_to_map)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  tf2
   tf
   geometry_msgs
   std_msgs
