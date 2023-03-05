@@ -8,10 +8,6 @@
 #include "apriltag_location_to_map/GetTargetLocation.h"
 
 ros::Subscriber sub;
-ros::Publisher  pub_front;
-ros::Publisher  pub_right;
-ros::Publisher  pub_left;
-ros::Publisher  pub_back;
 ros::Publisher  pub_target_pose;
 
 
@@ -401,7 +397,6 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
   return true;
 }
 
-
 void find_apriltags(const sensor_msgs::ImageConstPtr& msg)
 {
   is_apriltag_found(&tableSide_apriltag, p_listener, "/map");
@@ -425,12 +420,7 @@ void find_apriltags(const sensor_msgs::ImageConstPtr& msg)
   is_apriltag_found(&trash_arm_apriltag, p_listener, "/map");
   is_apriltag_found(&drink_arm_apriltag, p_listener, "/map");
 
-  // pub_front.publish(tableSide_apriltag.lastKnownPoseStamped);
-  // For Debug
-  // pub_front.publish(drinkFront_apriltag.lastKnownPoseStamped);
-  // pub_right.publish(drinkRight_apriltag.lastKnownPoseStamped);
-  // pub_left.publish(drinkLeft_apriltag.lastKnownPoseStamped);
-  // pub_back.publish(drinkBack_apriltag.lastKnownPoseStamped);
+	// pub_target_pose.publish(final_pose);
 }
 
 int main(int argc, char** argv){
@@ -449,10 +439,6 @@ int main(int argc, char** argv){
   
   ros::ServiceServer service = node.advertiseService("GetTargetLocation", return_target_location);
   pub_target_pose = node.advertise<geometry_msgs::PoseStamped>("/target_location_pose", 1);
-  pub_front = node.advertise<geometry_msgs::PoseStamped>("/Front", 1);
-  pub_right = node.advertise<geometry_msgs::PoseStamped>("/Right", 1);
-  pub_left = node.advertise<geometry_msgs::PoseStamped>("/Left", 1);
-  pub_back = node.advertise<geometry_msgs::PoseStamped>("/Back", 1);
 
   // We subscribe to camera purely as a subscriber to register callback and update the registration of apriltags
   // ros::Subscriber sub = node.subscribe("/frontCamera/color/image_rect_color/", 1, find_apriltags);
