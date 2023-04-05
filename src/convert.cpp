@@ -164,7 +164,7 @@ geometry_msgs::PoseStamped create_poseStamped(double x, double y, double z, doub
 //+z -> backward
 //+y -> upward
 // Table Side
-AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, 1, 0, 1.5708, 0));
+AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, 1.2, 0, 1.5708, 0));
 
 // Drink Drop Off Point
 float drop_off_point_width = 0.05;
@@ -211,18 +211,18 @@ bool is_apriltag_found(AprilTagLocation* apriltag, tf::TransformListener* listen
     try{
       listener->waitForTransform("/map", apriltag->frame_name, ros::Time(0), ros::Duration(1));
       listener->lookupTransform("/map", apriltag->frame_name, ros::Time(0), apriltag->transform_apriltag_to_map);
+      apriltag->update_timestamp();
     }
     catch(const std::exception& e){
       ROS_INFO("[GetTargetLocation]: %s seen but not currently observed", apriltag->frame_name.c_str());
     }
-    apriltag->update_timestamp();
     
     if (apriltag->newer_observed())
     {
       apriltag->is_currently_observed = true;
       apriltag->update_pose();
       // pub_target_pose_location.publish(apriltag->lastKnownPoseStamped);
-      std::cout << "[GetTargetLocation]: (Found " << apriltag->frame_name << " )" << std::endl;
+      std::cout << "[GetTargetLocation]: Currently Observing " << apriltag->frame_name << " )" << std::endl;
       return true;
     }
     else
@@ -238,7 +238,7 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
 {
   ROS_INFO("[GetTargetLocation]: %s requested", req.requested_target.c_str());
 
-  if (req.clear)
+  if (req.clear_target)
   {
     if (req.requested_target == "pickup")
     {
@@ -287,26 +287,30 @@ bool return_target_location(apriltag_location_to_map::GetTargetLocation::Request
     {
       res.target_pose = drinkFront_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
+      res.is_currently_observed = drinkFront_apriltag.is_currently_observed;
     }
     else if (drinkLeft_apriltag.has_been_observed)
     {
       res.target_pose = drinkLeft_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
+      res.is_currently_observed = drinkLeft_apriltag.is_currently_observed;
     }
     else if (drinkRight_apriltag.has_been_observed)
     {
       res.target_pose = drinkRight_apriltag.lastKnownPoseStamped;
       res.has_been_observed = true;
+      res.is_currently_observed = drinkRight_apriltag.is_currently_observed;
     }
     else if (drinkBack_apriltag.has_been_observed)
     {
       res.target_pose = drinkBack_apriltag.lastKnownPoseStamped;
-      res.has_been_observed = true;      
+      res.has_been_observed = true; 
+      res.is_currently_observed = drinkBack_apriltag.is_currently_observed;
     }
     else
     {
       res.target_pose = drinkFront_apriltag.lastKnownPoseStamped;
-      res.has_been_observed = false;    
+      res.has_been_observed = false;
     }
   }
   else if (req.requested_target == "pot_dropoff")
