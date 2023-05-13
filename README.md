@@ -2,7 +2,9 @@
 
 About: This package continually subscribes to the frames produced by the ros_apriltags package. Then, the poses of the defined apriltags are registered and kept track within the memory of the node.
 
-To run, execute the following commands
+To run:
+
+Execute the following commands
 ```
 rosrun apriltag_location_to_map apriltag_location_to_map_convert
 ```
