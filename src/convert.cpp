@@ -6,6 +6,7 @@
 #include <image_transport/image_transport.h>
 
 #include "apriltag_location_to_map/GetTargetLocation.h"
+#include <queue>
 
 ros::Subscriber sub;
 ros::Publisher  pub_target_pose;
@@ -23,6 +24,8 @@ class AprilTagLocation{
     std::string frame_name;
     bool has_been_observed = false;
     bool is_currently_observed = false;
+
+    std::queue<geometry_msgs::PoseStamped> poseBuffer;
 
     AprilTagLocation(std::string frame_name, geometry_msgs::PoseStamped offsetPoseStamped) 
     {
@@ -97,6 +100,46 @@ class AprilTagLocation{
       return pose_in_target_frame;
     }
 
+    geometry_msgs::PoseStamped get_poseStamped_from_buffer(geometry_msgs::PoseStamped currentPoseStamped)
+    {
+      if (this->poseBuffer.size() == 3)
+      {
+        this->poseBuffer.pop();
+      }
+      this->poseBuffer.push(currentPoseStamped);
+      std::cout<< (this->poseBuffer.size()) << std::endl;
+      // Find Average
+      geometry_msgs::PoseStamped averagePoseStamped;
+      std::queue<geometry_msgs::PoseStamped> poseBuffer_copy = this->poseBuffer;
+      averagePoseStamped.header = currentPoseStamped.header;
+      while(!poseBuffer_copy.empty())
+      {
+        geometry_msgs::PoseStamped poseStampedInBuffer = poseBuffer_copy.front();
+        
+        averagePoseStamped.pose.position.x = averagePoseStamped.pose.position.x + poseStampedInBuffer.pose.position.x;
+        averagePoseStamped.pose.position.y = averagePoseStamped.pose.position.y + poseStampedInBuffer.pose.position.y;
+        averagePoseStamped.pose.position.z = averagePoseStamped.pose.position.z + poseStampedInBuffer.pose.position.z;
+
+        averagePoseStamped.pose.orientation.x = averagePoseStamped.pose.orientation.x + poseStampedInBuffer.pose.orientation.x;
+        averagePoseStamped.pose.orientation.y = averagePoseStamped.pose.orientation.y + poseStampedInBuffer.pose.orientation.y;
+        averagePoseStamped.pose.orientation.z = averagePoseStamped.pose.orientation.z + poseStampedInBuffer.pose.orientation.z;
+        averagePoseStamped.pose.orientation.w = averagePoseStamped.pose.orientation.w + poseStampedInBuffer.pose.orientation.w;
+
+        poseBuffer_copy.pop();
+      }
+
+      averagePoseStamped.pose.position.x = averagePoseStamped.pose.position.x/this->poseBuffer.size();
+      averagePoseStamped.pose.position.y = averagePoseStamped.pose.position.y/this->poseBuffer.size();
+      averagePoseStamped.pose.position.z = averagePoseStamped.pose.position.z/this->poseBuffer.size();
+
+      averagePoseStamped.pose.orientation.x = averagePoseStamped.pose.orientation.x/this->poseBuffer.size();
+      averagePoseStamped.pose.orientation.y = averagePoseStamped.pose.orientation.y/this->poseBuffer.size();
+      averagePoseStamped.pose.orientation.z = averagePoseStamped.pose.orientation.z/this->poseBuffer.size();
+      averagePoseStamped.pose.orientation.w = averagePoseStamped.pose.orientation.w/this->poseBuffer.size();
+      
+      return averagePoseStamped;
+    }
+
     void update_pose()
     {      
       geometry_msgs::PoseStamped apriltag_location_mapOrigin;
@@ -107,7 +150,7 @@ class AprilTagLocation{
       
       apriltag_location_mapOrigin.pose = project_to_XY_plane(apriltag_location_mapOrigin.pose);
       
-      this->lastKnownPoseStamped = apriltag_location_mapOrigin;
+      this->lastKnownPoseStamped = apriltag_location_mapOrigin;//get_poseStamped_from_buffer(apriltag_location_mapOrigin);
     }
 
     bool newer_observed()
@@ -164,31 +207,31 @@ geometry_msgs::PoseStamped create_poseStamped(double x, double y, double z, doub
 //+z -> backward
 //+y -> upward
 // Table Side
-AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, 1.2, 0, 1.5708, 0));
+AprilTagLocation tableSide_apriltag("/tableSide", create_poseStamped(0, 0, 0.85, 0, 1.5708, 0));
 
 // Drink Drop Off Point
 float drop_off_point_width = 0.05;
 float drop_off_point_length = 0.10;
-AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(0, 0, 1.2, 0, 1.5708, 0)); // Front
-AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2 + 1, 0, -drop_off_point_width/2, 0, 1.5708 + 1.5708, 0)); // Left
-AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(0, 0, drop_off_point_length - 1, 0, -1.5708, 0)); // Back
-AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(-drop_off_point_length/2 - 0.7, drop_off_point_width/2, 0, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation drinkFront_apriltag("/tag_20", create_poseStamped(0, 0, 1.1, 0, 1.5708, 0)); // Front
+AprilTagLocation drinkLeft_apriltag("/tag_17", create_poseStamped(drop_off_point_length/2 + 1.1, 0, -drop_off_point_width/2, 0, 1.5708 + 1.5708, 0)); // Left
+AprilTagLocation drinkBack_apriltag("/tag_18", create_poseStamped(0, 0, drop_off_point_length - 1.1, 0, -1.5708, 0)); // Back
+AprilTagLocation drinkRight_apriltag("/tag_19", create_poseStamped(-drop_off_point_length/2 - 1.1, drop_off_point_width/2, 0, 0, 0, 1.507 - 1.507)); // Right
 
 // Trash Drop off point
 float trash_drop_off_point_width = 0.05;
 float trash_drop_off_point_length = 0.10;
-AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(0, 0, 1.2, 0, 1.5708, 0)); // Front
-AprilTagLocation trashLeft_apriltag("/tag_13", create_poseStamped(-trash_drop_off_point_length/2 - 1.2, 0, trash_drop_off_point_width/2, 0, 0, 1.507 + 1.507)); // Left
-AprilTagLocation trashBack_apriltag("/tag_14", create_poseStamped(0, 0, trash_drop_off_point_length + 1.2, 0, 0, 1.507 + 3.14159)); // Back
-AprilTagLocation trashRight_apriltag("/tag_15", create_poseStamped(trash_drop_off_point_length/2 + 1.2, 0, trash_drop_off_point_width/2, 0, 0, 1.507 - 1.507)); // Right
+AprilTagLocation trashFront_apriltag("/tag_16", create_poseStamped(0, 0, 1.1, 0, 1.5708, 0)); // Front
+AprilTagLocation trashLeft_apriltag("/tag_13", create_poseStamped(-trash_drop_off_point_length/2 - 1.1, 0, trash_drop_off_point_width/2, 0, 0, 1.507 + 1.507)); // Left
+AprilTagLocation trashBack_apriltag("/tag_14", create_poseStamped(0, 0, trash_drop_off_point_length + 1.1, 0, 0, 1.507 + 3.14159)); // Back
+AprilTagLocation trashRight_apriltag("/tag_15", create_poseStamped(trash_drop_off_point_length/2 + 1.1, 0, trash_drop_off_point_width/2, 0, 0, 1.507 - 1.507)); // Right
 
 // Pot Drop off point
 float pot_drop_off_point_width = 0.05;
 float pot_drop_off_point_length = 0.10;
-AprilTagLocation potFront_apriltag("/tag_16", create_poseStamped(0, 0, -1, 0, 0, 1.507)); // Front (supposed to be tag_10)
-AprilTagLocation potLeft_apriltag("/tag_13", create_poseStamped(-pot_drop_off_point_width/2 - 1, 0, pot_drop_off_point_length/2, 0, 0, 1.507 + 1.507)); // Left (supposed to be tag_11)
-AprilTagLocation potBack_apriltag("/tag_14", create_poseStamped(0, 0, pot_drop_off_point_width + 1.2, 0, 0, 1.507 + 3.14159)); // Back (supposed to be tag_9)
-AprilTagLocation potRight_apriltag("/tag_15", create_poseStamped(pot_drop_off_point_width/2 + 1.2, 0, pot_drop_off_point_length/2, 0, 0, 1.507 - 1.507)); // Right (supposed to be tag_8)
+AprilTagLocation potFront_apriltag("/tag_16", create_poseStamped(0, 0, -1.1, 0, 0, 1.507)); // Front (supposed to be tag_10)
+AprilTagLocation potLeft_apriltag("/tag_13", create_poseStamped(-pot_drop_off_point_width/2 - 1.1, 0, pot_drop_off_point_length/2, 0, 0, 1.507 + 1.507)); // Left (supposed to be tag_11)
+AprilTagLocation potBack_apriltag("/tag_14", create_poseStamped(0, 0, pot_drop_off_point_width + 1.1, 0, 0, 1.507 + 3.14159)); // Back (supposed to be tag_9)
+AprilTagLocation potRight_apriltag("/tag_15", create_poseStamped(pot_drop_off_point_width/2 + 1.1, 0, pot_drop_off_point_length/2, 0, 0, 1.507 - 1.507)); // Right (supposed to be tag_8)
 
 // Coordinate for where the object should be released relative to the qr code
 
